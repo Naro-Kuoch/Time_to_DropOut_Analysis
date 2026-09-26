@@ -75,18 +75,19 @@ boxplot(
 ```{r}
 library(survival)
 library(survminer)
+library(ggsurvfit)
 fit.KM <- survfit(Surv(time_to_event, event) ~ 1, data = data_dropout)
 autoplot(fit.KM)
 fit.KM
 ```
-
+Probility of not dropping out always higher than 80%
 ```{r}
 plot(fit.KM, fun = "F",
      xlab = "Semester",
      ylab = "Cumulated Probability of drop out")
 ```
 
-We can see that the curve never reach median. 
+Probability of dropping out never reach 50%
 
 # Comparison between male and female 
 ```{r}
@@ -96,7 +97,7 @@ fit_gender
 ```
 
 ```{r}
-ggsurvplot(fit_gender)
+ggsurvfit(fit_gender)
 ```
 
 ## The logrank test
@@ -110,7 +111,7 @@ fit_course <- survfit(Surv(time_to_event, event) ~ group, data = data_dropout)
 fit_course
 ```
 ```{r}
-ggsurvplot(fit_course)
+ggsurvfit(fit_course)
 ```
 
 ## The logrank test
@@ -124,11 +125,11 @@ There is not statistical significant different between courses
 survdiff(Surv(time_to_event, event) ~ Gender + strata(group), data = data_dropout)
 ```
 ```{r}
-fitGC <- survfit(
+fitGC = survfit(
   Surv(time_to_event, event) ~ Gender + strata(group),
   data = data_dropout
 )
-ggsurvplot(fitGC)
+ggsurvfit(fitGC)
 ```
 
 Event we include the coures as confounding factor, the survival curves of males and females are stil statistically significant different 
@@ -137,3 +138,23 @@ Event we include the coures as confounding factor, the survival curves of males 
 survdiff(Surv(time_to_event, event) ~ group + strata(Gender), data = data_dropout)
 ```
 Even if we add gender as cofounding factor, the difference of survival curves between coures are still not statistically significant 
+# Effect of Academic performance on time to dropout with Cox model
+```{r}
+fit = coxph(Surv(time_to_event, event) ~ CFUP, data = data_dropout)
+fit
+```
+
+The hazard ratio is statistically significant, and it is less than 1. Meaning that the increase of academic performance, decreases the risk of dropout.  
+
+# Effect of Gender on time to dropout with Cox model
+```{r}
+coxph(Surv(time_to_event, event) ~ Gender, data = data_dropout)
+```
+
+Being a male has higher risk to dropout than female. 
+# Effect of course on time to dropout with Cox model
+```{r}
+coxph(Surv(time_to_event, event) ~ group, data = data_dropout)
+```
+The harzard ratio is not statistically significant. 
+cosB, cosC, cosE, cosF, cosO, and cosP have hazard ratio less than 1. Compare to cosA the students in those courses has less risk than CosA. While the other courses have hazard ratio more than 1 so they have more risk to dropout than the students in CosA. 
