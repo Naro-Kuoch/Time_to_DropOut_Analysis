@@ -100,7 +100,7 @@ fit_gender
 ggsurvfit(fit_gender)
 ```
 
-## The logrank test
+# The logrank test
 ```{r}
 survdiff(Surv(time_to_event, event) ~ Gender, data = data_dropout)
 ```
@@ -114,7 +114,7 @@ fit_course
 ggsurvfit(fit_course)
 ```
 
-## The logrank test
+# The logrank test
 ```{r}
 survdiff(Surv(time_to_event, event) ~ group, data = data_dropout)
 ```
@@ -141,20 +141,35 @@ Even if we add gender as cofounding factor, the difference of survival curves be
 # Effect of Academic performance on time to dropout with Cox model
 ```{r}
 fit = coxph(Surv(time_to_event, event) ~ CFUP, data = data_dropout)
-fit
+summary(fit)
 ```
 
 The hazard ratio is statistically significant, and it is less than 1. Meaning that the increase of academic performance, decreases the risk of dropout.  
 
 # Effect of Gender on time to dropout with Cox model
 ```{r}
-coxph(Surv(time_to_event, event) ~ Gender, data = data_dropout)
+summary(coxph(Surv(time_to_event, event) ~ Gender, data = data_dropout))
 ```
 
 Being a male has higher risk to dropout than female. 
 # Effect of course on time to dropout with Cox model
 ```{r}
-coxph(Surv(time_to_event, event) ~ group, data = data_dropout)
+summary(coxph(Surv(time_to_event, event) ~ group, data = data_dropout))
 ```
 The harzard ratio is not statistically significant. 
-cosB, cosC, cosE, cosF, cosO, and cosP have hazard ratio less than 1. Compare to cosA the students in those courses has less risk than CosA. While the other courses have hazard ratio more than 1 so they have more risk to dropout than the students in CosA. 
+cosB, cosC, cosE, cosF, cosO, and cosP have hazard ratio less than 1. Compare to cosA the students in those courses has less risk than CosA. While the other courses have hazard ratio more than 1 so they have more risk to dropout than the students in CosA.
+# Effect of multiple covariates 
+```{r}
+fit_multi = coxph(Surv(time_to_event, event) ~ Gender + CFUP + group, data = data_dropout)
+summary(fit_multi)
+```
+- GenderMale  has HR =  1.23756 meaning being in Male group has more risk to dropout than female group. 
+- CFUP has HR = 0.27981 meaning that having passed high number of credits, has low risk to dropout. 
+- groupCosB and cosE have HR < 1 meaning that students taking those courses have lower risk than students in groupCosA. 
+- Other couses has HR >1 meaning that students in those courses has more risk to dropout than in course A
+# Model Comparison
+which model explain better Hazard ratio ? 
+```{r}
+step(fit_multi)
+```
+The model with all the combination of covariant has the lowest AIC.
