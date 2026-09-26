@@ -36,6 +36,10 @@ glimpse(data_dropout)
 ```{r}
 data_dropout$time_to_event = as.numeric(data_dropout$time_to_event)
 ```
+```{r}
+tab=tbl_summary(data_dropout)
+tab
+```
 
 # Event Indicator
 if the student dropout the time_to_event <=6, otherwise the event din't drop in 6 semester
@@ -70,7 +74,7 @@ boxplot(
 library(survival)
 
 fit.KM <- survfit(Surv(time_to_event, event) ~ 1, data = data_dropout)
-summary(fit.KM)
+fit.KM
 ```
 
 ```{r}
@@ -78,4 +82,37 @@ plot(fit.KM, fun = "F",
      xlab = "Semester",
      ylab = "Cumulated Probability of drop out")
 ```
+
+We can see that the curve never reach median. 
+
+# Comparison between male and female 
+```{r}
+fit_gender <- survfit(Surv(time_to_event, event) ~ Gender, data = data_dropout)
+fit_gender
+```
+
+```{r}
+ggsurvplot(fit_gender)
+```
+
+## The logrank test
+```{r}
+survdiff(Surv(time_to_event, event) ~ Gender, data = data_dropout)
+```
+Since the p_value is less than 0.05 we can conclude that there is statistical significant of survival curves between male and female. 
+# Comparison between courses
+```{r}
+fit_course <- survfit(Surv(time_to_event, event) ~ group, data = data_dropout)
+fit_course
+```
+```{r}
+ggsurvplot(fit_course)
+```
+
+## The logrank test
+```{r}
+survdiff(Surv(time_to_event, event) ~ group, data = data_dropout)
+```
+There is not statistical significant different between courses 
+
 
