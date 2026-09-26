@@ -101,3 +101,5 @@ plot(km_all,
      ylab = "Probability of not having dropped out")
 
 summary(km_all, times = c(2, 4, 6))
+
+## THE
