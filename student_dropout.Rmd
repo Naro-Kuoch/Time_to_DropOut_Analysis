@@ -1,0 +1,81 @@
+---
+title: "Student_dropout"
+author: "Naro_KUOCH"
+date: "2026-09-25"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(TimeDepFrail)
+data(data_dropout)
+
+head(data_dropout)
+str(data_dropout)
+```
+
+CFUP: Standardized numerical covariate indicating the number of credits passed by the students by the end of the first semester.
+
+time_to_event: Time (in semesters) at which a student decides to leave the university. A value greater than 6.0 indicates the student did not drop out during the follow-up (e.g. 6.1 semesters)
+
+group: Categorical variable indicating the student's course of study, with 16 different levels from CosA, CosB, ... , CosP.
+
+```{r}
+unique(data_dropout$group)
+```
+```{r}
+# check the number of missing value in each variable 
+colSums(is.na(data_dropout))
+```
+```{r}
+glimpse(data_dropout)
+```
+```{r}
+data_dropout$time_to_event = as.numeric(data_dropout$time_to_event)
+```
+
+# Event Indicator
+if the student dropout the time_to_event <=6, otherwise the event din't drop in 6 semester
+```{r}
+#if dropped event = 1, event = 0 otherwise
+data_dropout$event = ifelse( data_dropout$time_to_event <= 6, 1, 0)
+```
+# Check data set distribtion 
+```{r}
+# number of dropped out and didn't drop out in 6 semesters 
+table(data_dropout$event)
+```
+```{r}
+# number of male and female 
+table(data_dropout$Gender)
+```
+```{r}
+# number of student for each course
+barplot(table(data_dropout$group))
+```
+```{r}
+
+boxplot(
+  data_dropout$CFUP,
+  main = "Boxplot of CFUP",
+  ylab = "CFUP"
+)
+```
+
+# Estimate survival function with Kaplan-Meier
+```{r}
+library(survival)
+
+fit.KM <- survfit(Surv(time_to_event, event) ~ 1, data = data_dropout)
+summary(fit.KM)
+```
+
+```{r}
+plot(fit.KM, fun = "F",
+     xlab = "Semester",
+     ylab = "Cumulated Probability of drop out")
+```
+
