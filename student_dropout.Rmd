@@ -35,17 +35,19 @@ glimpse(data_dropout)
 ```
 ```{r}
 data_dropout$time_to_event = as.numeric(data_dropout$time_to_event)
-```
-```{r}
+data_dropout$Gender = factor(data_dropout$Gender)
+data_dropout$group  = factor(data_dropout$group)
 tab=tbl_summary(data_dropout)
 tab
 ```
+
 
 # Event Indicator
 if the student dropout the time_to_event <=6, otherwise the event din't drop in 6 semester
 ```{r}
 #if dropped event = 1, event = 0 otherwise
 data_dropout$event = ifelse( data_dropout$time_to_event <= 6, 1, 0)
+
 ```
 # Check data set distribtion 
 ```{r}
@@ -72,8 +74,9 @@ boxplot(
 # Estimate survival function with Kaplan-Meier
 ```{r}
 library(survival)
-
+library(survminer)
 fit.KM <- survfit(Surv(time_to_event, event) ~ 1, data = data_dropout)
+autoplot(fit.KM)
 fit.KM
 ```
 
@@ -88,6 +91,7 @@ We can see that the curve never reach median.
 # Comparison between male and female 
 ```{r}
 fit_gender <- survfit(Surv(time_to_event, event) ~ Gender, data = data_dropout)
+autoplot(fit_gender)
 fit_gender
 ```
 
@@ -115,4 +119,21 @@ survdiff(Surv(time_to_event, event) ~ group, data = data_dropout)
 ```
 There is not statistical significant different between courses 
 
+# Include courses in the comparison between gender
+```{r}
+survdiff(Surv(time_to_event, event) ~ Gender + strata(group), data = data_dropout)
+```
+```{r}
+fitGC <- survfit(
+  Surv(time_to_event, event) ~ Gender + strata(group),
+  data = data_dropout
+)
+ggsurvplot(fitGC)
+```
 
+Event we include the coures as confounding factor, the survival curves of males and females are stil statistically significant different 
+# Include gender in the comparison between courses 
+```{r}
+survdiff(Surv(time_to_event, event) ~ group + strata(Gender), data = data_dropout)
+```
+Even if we add gender as cofounding factor, the difference of survival curves between coures are still not statistically significant 
