@@ -74,8 +74,8 @@ boxplot(
 # Estimate survival function with Kaplan-Meier
 ```{r}
 library(survival)
-library(survminer)
 library(ggsurvfit)
+
 fit.KM <- survfit(Surv(time_to_event, event) ~ 1, data = data_dropout)
 autoplot(fit.KM)
 fit.KM
@@ -173,3 +173,43 @@ which model explain better Hazard ratio ?
 step(fit_multi)
 ```
 The model with all the combination of covariant has the lowest AIC.
+# Residual Martigal
+```{r}
+data_dropout$residual <- residuals(fit_multi, type = "martingale")
+
+par(mfrow = c(1, 3), mar = c(4.2, 2, 2, 2))
+with(data_dropout, {
+
+  plot(CFUP, residual)
+  lines(lowess(CFUP, residual), lwd = 2)
+
+  plot(residual ~ Gender)
+
+  plot(residual ~ group)
+
+})
+```
+The martingale residauls associated with variables Gendar and Goup have expected value around 0 but it is not the case for CFUP. Notice that there are outliers in those residuals 
+
+
+# Validate proportional harzard with Schenfield Residaul 
+
+```{r}
+r = cox.zph(fit_multi)
+r
+```
+Globally those variables are fine because the p value are large except the CFUP. 
+```{r}
+plot(r)
+```
+We saw that all the p_value are large except the one associated with CFUP. 
+P_value <0.05 meaning the variable is not constant overtime which violated the assumption of cox model 
+# Dealing with the time dependant covariat 
+we allow the CFUP to be time dependant
+```{r}
+
+cox.nonph = coxph(Surv(time_to_event, event) ~ Gender + CFUP + tt(CFUP)+ group, data = data_dropout, tt=function(x,t,...) x*t)
+summary(cox.nonph)
+```
+
+
