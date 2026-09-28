@@ -31,9 +31,11 @@ unique(data_dropout$group)
 colSums(is.na(data_dropout))
 ```
 ```{r}
+library(dplyr)
 glimpse(data_dropout)
 ```
 ```{r}
+library(gtsummary)
 data_dropout$time_to_event = as.numeric(data_dropout$time_to_event)
 data_dropout$Gender = factor(data_dropout$Gender)
 data_dropout$group  = factor(data_dropout$group)
@@ -75,12 +77,16 @@ boxplot(
 ```{r}
 library(survival)
 library(ggsurvfit)
+library(ggfortify)
 
 fit.KM <- survfit(Surv(time_to_event, event) ~ 1, data = data_dropout)
 autoplot(fit.KM)
 fit.KM
+
+summary(fit.KM, times = c(2, 4, 6))
 ```
-Probility of not dropping out always higher than 80%
+Probability of not dropping out always higher than 80% (0.847 at semester 6), so the median is not reached. Most dropouts occur at the end of each academic year (semesters 2, 4, 6).
+
 ```{r}
 plot(fit.KM, fun = "F",
      xlab = "Semester",
@@ -94,7 +100,10 @@ Probability of dropping out never reach 50%
 fit_gender <- survfit(Surv(time_to_event, event) ~ Gender, data = data_dropout)
 autoplot(fit_gender)
 fit_gender
+
+summary(fit_gender, times = c(2, 4, 6))
 ```
+At semester 6 : 0.881 for female vs 0.838 for male students.Gap appears at the end of semester 2.
 
 ```{r}
 ggsurvfit(fit_gender)
