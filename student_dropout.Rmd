@@ -72,6 +72,21 @@ boxplot(
   ylab = "CFUP"
 )
 ```
+```{r}
+tbl_summary(data_dropout, by = event, include = c(Gender, CFUP, group))
+```
+
+```{r}
+boxplot(CFUP ~ event, data = data_dropout,
+        names = c("No dropout", "Dropout"),
+        main = "CFUP by dropout status",
+        ylab = "CFUP")
+```
+
+```{r}
+round(prop.table(table(data_dropout$group, data_dropout$Gender), margin = 1), 2)
+```
+Dropouts have lower CFUP. The proportion of female students varies a lot between courses (from 5% in CosN to 52% in CosD).
 
 # Estimate survival function with Kaplan-Meier
 ```{r}
@@ -154,6 +169,9 @@ survdiff(Surv(time_to_event, event) ~ CFUP_class, data = data_dropout)
 Strong difference between CFUP classes (p < 0.001). At S6 : 0.652 for Q1 vs 0.984 for Q4.
 
 # Include courses in the comparison between gender
+
+As seen in the descriptive analysis, the proportion of female students varies a lot between courses, so the course may be a confounding factor for the gender comparison.
+
 ```{r}
 survdiff(Surv(time_to_event, event) ~ Gender + strata(group), data = data_dropout)
 ```
