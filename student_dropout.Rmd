@@ -1,6 +1,6 @@
 ---
 title: "Student_dropout"
-author: "Naro_KUOCH"
+author: "Naro KUOCH and Yani LALA"
 date: "2026-09-25"
 output: pdf_document
 ---
