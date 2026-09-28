@@ -127,7 +127,31 @@ ggsurvfit(fit_course)
 ```{r}
 survdiff(Surv(time_to_event, event) ~ group, data = data_dropout)
 ```
-There is not statistical significant different between courses 
+There is not statistical significant differences between courses 
+
+# Comparison between CFUP classes
+```{r}
+cfup_breaks <- quantile(data_dropout$CFUP, probs = c(0, 0.25, 0.5, 0.75, 1))
+data_dropout$CFUP_class <- cut(data_dropout$CFUP,
+                               breaks = cfup_breaks,
+                               include.lowest = TRUE,
+                               labels = c("Q1 (lowest)", "Q2", "Q3", "Q4 (highest)"))
+table(data_dropout$CFUP_class)
+```
+Classes are not of equal size because many students have the same CFUP value (665 students have the minimum value).
+
+```{r}
+fit_cfup <- survfit(Surv(time_to_event, event) ~ CFUP_class, data = data_dropout)
+fit_cfup
+summary(fit_cfup, times = c(2, 4, 6))
+ggsurvfit(fit_cfup)
+```
+
+# The log-rank test
+```{r}
+survdiff(Surv(time_to_event, event) ~ CFUP_class, data = data_dropout)
+```
+Strong difference between CFUP classes (p < 0.001). At S6 : 0.652 for Q1 vs 0.984 for Q4.
 
 # Include courses in the comparison between gender
 ```{r}
