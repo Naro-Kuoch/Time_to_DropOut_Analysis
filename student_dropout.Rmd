@@ -52,7 +52,7 @@ data_dropout$event = ifelse( data_dropout$time_to_event <= 6, 1, 0)
 
 ```
 
-# Check data set distribtion 
+# Check data set distribution 
 ```{r}
 # number of dropped out and didn't drop out in 6 semesters 
 table(data_dropout$event)
@@ -101,7 +101,7 @@ fit.KM
 
 summary(fit.KM, times = c(2, 4, 6))
 ```
-Probability of not dropping out always higher than 80% (0.847 at semester 6), so the median is not reached. Most dropouts occur at the end of each academic year (semesters 2, 4, 6).
+Probability of not dropping out always higher than 80% (0.847 at semester 6), so the median is not reached. Most dropouts occurred at the end of each academic year (semesters 2, 4, 6).
 
 ```{r}
 plot(fit.KM, fun = "F",
@@ -125,7 +125,7 @@ At semester 6 : 0.881 for female vs 0.838 for male students.Gap appears at the e
 ggsurvfit(fit_gender)
 ```
 
-# The logrank test
+# The log rank test
 ```{r}
 survdiff(Surv(time_to_event, event) ~ Gender, data = data_dropout)
 ```
@@ -148,6 +148,7 @@ There is not statistical significant differences between courses
 
 # Comparison between CFUP classes
 ```{r}
+#Categorize CFUP variable
 cfup_breaks <- quantile(data_dropout$CFUP, probs = c(0, 0.25, 0.5, 0.75, 1))
 data_dropout$CFUP_class <- cut(data_dropout$CFUP,
                                breaks = cfup_breaks,
@@ -168,7 +169,7 @@ ggsurvfit(fit_cfup)
 ```{r}
 survdiff(Surv(time_to_event, event) ~ CFUP_class, data = data_dropout)
 ```
-Strong difference between CFUP classes (p < 0.001). At S6 : 0.652 for Q1 vs 0.984 for Q4.
+There is statistical significant difference between survival curves of CFUP_class since p < 0.05.
 
 # Include courses in the comparison between gender
 
@@ -185,13 +186,13 @@ fitGC = survfit(
 ggsurvfit(fitGC)
 ```
 
-Event we include the coures as confounding factor, the survival curves of males and females are stil statistically significant different 
+Event we include the courses as confounding factor, the survival curves of males and females are still statistically significant different 
 
 # Include gender in the comparison between courses 
 ```{r}
 survdiff(Surv(time_to_event, event) ~ group + strata(Gender), data = data_dropout)
 ```
-Even if we add gender as cofounding factor, the difference of survival curves between coures are still not statistically significant 
+Even if we add gender as a confounding factor, the difference of survival curves between courses are still not statistically significant 
 
 # Effect of Academic performance on time to dropout with Cox model
 ```{r}
@@ -263,10 +264,11 @@ plot(r)
 ```
 We saw that all the p_value are large except the one associated with CFUP. 
 P_value <0.05 meaning the variable is not constant overtime which violated the assumption of cox model 
-# Dealing with the time dependant covariat 
-we allow the CFUP to be time dependant
-```{r}
 
+# Dealing with the time dependant covariate  
+one way is to allow the CFUP to be time dependant
+
+```{r}
 cox.nonph = coxph(Surv(time_to_event, event) ~ Gender + CFUP + tt(CFUP)+ group, data = data_dropout, tt=function(x,t,...) x*t)
 summary(cox.nonph)
 ```
