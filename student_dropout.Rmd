@@ -204,10 +204,10 @@ plot(r)
 ```
 We saw that all the p_value are large except the one associated with CFUP. 
 P_value <0.05 meaning the variable is not constant overtime which violated the assumption of cox model 
-# Dealing with the time dependant covariat 
+# Dealing with the time dependant covariate
+
 we allow the CFUP to be time dependant
 ```{r}
-
 cox.nonph = coxph(Surv(time_to_event, event) ~ Gender + CFUP + tt(CFUP)+ group, data = data_dropout, tt=function(x,t,...) x*t)
 summary(cox.nonph)
 ```
