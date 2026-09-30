@@ -1,6 +1,6 @@
 ---
 title: "Student_dropout"
-author: "Naro_KUOCH"
+author: "Naro KUOCH and Yani LALA"
 date: "2026-09-25"
 output: pdf_document
 ---
@@ -31,9 +31,11 @@ unique(data_dropout$group)
 colSums(is.na(data_dropout))
 ```
 ```{r}
+library(dplyr)
 glimpse(data_dropout)
 ```
 ```{r}
+library(gtsummary)
 data_dropout$time_to_event = as.numeric(data_dropout$time_to_event)
 data_dropout$Gender = factor(data_dropout$Gender)
 data_dropout$group  = factor(data_dropout$group)
@@ -49,7 +51,8 @@ if the student dropout the time_to_event <=6, otherwise the event din't drop in 
 data_dropout$event = ifelse( data_dropout$time_to_event <= 6, 1, 0)
 
 ```
-# Check data set distribtion 
+
+# Check data set distribution 
 ```{r}
 # number of dropped out and didn't drop out in 6 semesters 
 table(data_dropout$event)
@@ -70,17 +73,36 @@ boxplot(
   ylab = "CFUP"
 )
 ```
+```{r}
+tbl_summary(data_dropout, by = event, include = c(Gender, CFUP, group))
+```
+
+```{r}
+boxplot(CFUP ~ event, data = data_dropout,
+        names = c("No dropout", "Dropout"),
+        main = "CFUP by dropout status",
+        ylab = "CFUP")
+```
+
+```{r}
+round(prop.table(table(data_dropout$group, data_dropout$Gender), margin = 1), 2)
+```
+Dropouts have lower CFUP. The proportion of female students varies a lot between courses (from 5% in CosN to 52% in CosD).
 
 # Estimate survival function with Kaplan-Meier
 ```{r}
 library(survival)
 library(ggsurvfit)
+library(ggfortify)
 
 fit.KM <- survfit(Surv(time_to_event, event) ~ 1, data = data_dropout)
 autoplot(fit.KM)
 fit.KM
+
+summary(fit.KM, times = c(2, 4, 6))
 ```
-Probility of not dropping out always higher than 80%
+Probability of not dropping out always higher than 80% (0.847 at semester 6), so the median is not reached. Most dropouts occurred at the end of each academic year (semesters 2, 4, 6).
+
 ```{r}
 plot(fit.KM, fun = "F",
      xlab = "Semester",
@@ -94,17 +116,21 @@ Probability of dropping out never reach 50%
 fit_gender <- survfit(Surv(time_to_event, event) ~ Gender, data = data_dropout)
 autoplot(fit_gender)
 fit_gender
+
+summary(fit_gender, times = c(2, 4, 6))
 ```
+At semester 6 : 0.881 for female vs 0.838 for male students.Gap appears at the end of semester 2.
 
 ```{r}
 ggsurvfit(fit_gender)
 ```
 
-# The logrank test
+# The log rank test
 ```{r}
 survdiff(Surv(time_to_event, event) ~ Gender, data = data_dropout)
 ```
 Since the p_value is less than 0.05 we can conclude that there is statistical significant of survival curves between male and female. 
+
 # Comparison between courses
 ```{r}
 fit_course <- survfit(Surv(time_to_event, event) ~ group, data = data_dropout)
@@ -118,9 +144,37 @@ ggsurvfit(fit_course)
 ```{r}
 survdiff(Surv(time_to_event, event) ~ group, data = data_dropout)
 ```
-There is not statistical significant different between courses 
+There is not statistical significant differences between courses 
+
+# Comparison between CFUP classes
+```{r}
+#Categorize CFUP variable
+cfup_breaks <- quantile(data_dropout$CFUP, probs = c(0, 0.25, 0.5, 0.75, 1))
+data_dropout$CFUP_class <- cut(data_dropout$CFUP,
+                               breaks = cfup_breaks,
+                               include.lowest = TRUE,
+                               labels = c("Q1 (lowest)", "Q2", "Q3", "Q4 (highest)"))
+table(data_dropout$CFUP_class)
+```
+Classes are not of equal size because many students have the same CFUP value (665 students have the minimum value).
+
+```{r}
+fit_cfup <- survfit(Surv(time_to_event, event) ~ CFUP_class, data = data_dropout)
+fit_cfup
+summary(fit_cfup, times = c(2, 4, 6))
+ggsurvfit(fit_cfup)
+```
+
+# The log-rank test
+```{r}
+survdiff(Surv(time_to_event, event) ~ CFUP_class, data = data_dropout)
+```
+There is statistical significant difference between survival curves of CFUP_class since p < 0.05.
 
 # Include courses in the comparison between gender
+
+As seen in the descriptive analysis, the proportion of female students varies a lot between courses, so the course may be a confounding factor for the gender comparison.
+
 ```{r}
 survdiff(Surv(time_to_event, event) ~ Gender + strata(group), data = data_dropout)
 ```
@@ -132,12 +186,14 @@ fitGC = survfit(
 ggsurvfit(fitGC)
 ```
 
-Event we include the coures as confounding factor, the survival curves of males and females are stil statistically significant different 
+Event we include the courses as confounding factor, the survival curves of males and females are still statistically significant different 
+
 # Include gender in the comparison between courses 
 ```{r}
 survdiff(Surv(time_to_event, event) ~ group + strata(Gender), data = data_dropout)
 ```
-Even if we add gender as cofounding factor, the difference of survival curves between coures are still not statistically significant 
+Even if we add gender as a confounding factor, the difference of survival curves between courses are still not statistically significant 
+
 # Effect of Academic performance on time to dropout with Cox model
 ```{r}
 fit = coxph(Surv(time_to_event, event) ~ CFUP, data = data_dropout)
@@ -152,12 +208,14 @@ summary(coxph(Surv(time_to_event, event) ~ Gender, data = data_dropout))
 ```
 
 Being a male has higher risk to dropout than female. 
+
 # Effect of course on time to dropout with Cox model
 ```{r}
 summary(coxph(Surv(time_to_event, event) ~ group, data = data_dropout))
 ```
 The harzard ratio is not statistically significant. 
 cosB, cosC, cosE, cosF, cosO, and cosP have hazard ratio less than 1. Compare to cosA the students in those courses has less risk than CosA. While the other courses have hazard ratio more than 1 so they have more risk to dropout than the students in CosA.
+
 # Effect of multiple covariates 
 ```{r}
 fit_multi = coxph(Surv(time_to_event, event) ~ Gender + CFUP + group, data = data_dropout)
@@ -167,12 +225,14 @@ summary(fit_multi)
 - CFUP has HR = 0.27981 meaning that having passed high number of credits, has low risk to dropout. 
 - groupCosB and cosE have HR < 1 meaning that students taking those courses have lower risk than students in groupCosA. 
 - Other couses has HR >1 meaning that students in those courses has more risk to dropout than in course A
+
 # Model Comparison
 which model explain better Hazard ratio ? 
 ```{r}
 step(fit_multi)
 ```
 The model with all the combination of covariant has the lowest AIC.
+
 # Residual Martigal
 ```{r}
 data_dropout$residual <- residuals(fit_multi, type = "martingale")
@@ -204,9 +264,10 @@ plot(r)
 ```
 We saw that all the p_value are large except the one associated with CFUP. 
 P_value <0.05 meaning the variable is not constant overtime which violated the assumption of cox model 
-# Dealing with the time dependant covariate
 
-we allow the CFUP to be time dependant
+# Dealing with the time dependant covariate  
+one way is to allow the CFUP to be time dependant
+
 ```{r}
 cox.nonph = coxph(Surv(time_to_event, event) ~ Gender + CFUP + tt(CFUP)+ group, data = data_dropout, tt=function(x,t,...) x*t)
 summary(cox.nonph)
